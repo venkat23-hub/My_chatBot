@@ -6,39 +6,40 @@ import pickle
 import random
 import json
 import os
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
 
-# === Download NLTK resources (for Render and local use) ===
-nltk.download('punkt')
-nltk.download('wordnet')
+# === Ensure NLTK Resources Are Available ===
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
 
-# === Initialize Preprocessing Tools ===
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+
+# === NLP Tools ===
 lemmatizer = WordNetLemmatizer()
 tokenizer = TreebankWordTokenizer()
 
-# === Load Model and Required Files ===
+# === Load Trained Model and Data ===
 model = load_model('chatbot_model.h5')
 
-try:
-    with open('intents.json', encoding='utf8') as f:
-        intents = json.load(f)
-except Exception as e:
-    raise RuntimeError("❌ Failed to load intents.json: " + str(e))
+with open('intents.json', encoding='utf8') as f:
+    intents = json.load(f)
 
-try:
-    words = pickle.load(open('words.pkl', 'rb'))
-    classes = pickle.load(open('classes.pkl', 'rb'))
-except Exception as e:
-    raise RuntimeError("❌ Failed to load pickle files: " + str(e))
+words = pickle.load(open('words.pkl', 'rb'))
+classes = pickle.load(open('classes.pkl', 'rb'))
 
-# === NLP Helpers ===
+# === NLP Preprocessing and Prediction ===
 def clean_up_sentence(sentence):
     sentence_words = tokenizer.tokenize(sentence)
     return [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
 
-def bow(sentence, words, show_details=False):
+def bow(sentence, words):
     sentence_words = clean_up_sentence(sentence)
     bag = [0] * len(words)
     for s in sentence_words:
@@ -68,23 +69,22 @@ def chatbot_response(msg):
     intents_list = predict_class(msg, model)
     return get_response(intents_list, intents)
 
-def decrypt(msg):
-    return msg.replace("+", " ")
-
 # === Flask App Setup ===
 app = Flask(__name__)
-CORS(app)  # ✅ Allow requests from frontend (React or browser)
+CORS(app)
 
 @app.route("/", methods=["GET"])
 def health():
     return jsonify({"Health": "✅ Server is running successfully"})
 
-@app.route("/query/<message>", methods=["GET"])
-def query_chatbot(message):
-    user_message = decrypt(message)
+@app.route("/query", methods=["GET"])
+def query_chatbot():
+    user_message = request.args.get("message", "")
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
     response = chatbot_response(user_message)
     return jsonify({"top": {"res": response}})
 
-# === Entry Point for Development ===
+# === Main Entry Point (Local) ===
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
