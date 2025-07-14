@@ -17,7 +17,7 @@ tokenizer = TreebankWordTokenizer()
 words = []
 classes = []
 documents = []
-ignore_words = ['!', '?', '$', '@']
+ignore_words = ['!', '$', '@']
 
 # Load intents
 with open('intents.json', 'r', encoding='utf-8') as file:
