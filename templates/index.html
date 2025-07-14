@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom ChatBot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>🤖 Customised ChatBot</h1>
+
+        <div class="chat-box" id="chat-box">
+            {% for user, bot in chat_history %}
+                <p class="user-msg"><strong>You:</strong> {{ user }}</p>
+                <p class="bot-msg"><strong>Bot:</strong> {{ bot }}</p>
+            {% endfor %}
+        </div>
+
+        <form method="POST" class="chat-form">
+            <input type="text" name="message" placeholder="Type your message here..." required>
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="buttons">
+            <button onclick="saveChat()">💾 Save Chat</button>
+            <button onclick="resetChat()">🧹 Reset Chat</button>
+        </div>
+    </div>
+
+    <script>
+        async function saveChat() {
+            const res = await fetch("/save_chat");
+            const data = await res.json();
+            alert("✅ Chat saved to " + data.path);
+        }
+
+        async function resetChat() {
+            const res = await fetch("/reset_chat", { method: 'POST' });
+            const data = await res.json();
+            if (data.status === "reset") {
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

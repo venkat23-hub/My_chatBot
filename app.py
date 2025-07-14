@@ -7,19 +7,14 @@ import random
 import json
 import os
 import webbrowser
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
-from pyngrok import ngrok  # ✅ pyngrok handles tunneling
+from pyngrok import ngrok
 
-# === Optional: Set path to local NLTK data ===
 nltk.data.path.append('./nltk_data')
-
-# === NLP Tools ===
 lemmatizer = WordNetLemmatizer()
 tokenizer = TreebankWordTokenizer()
-
-# === Load Trained Model and Data ===
 model = load_model('chatbot_model.h5')
 
 with open('intents.json', encoding='utf8') as f:
@@ -28,7 +23,8 @@ with open('intents.json', encoding='utf8') as f:
 words = pickle.load(open('words.pkl', 'rb'))
 classes = pickle.load(open('classes.pkl', 'rb'))
 
-# === NLP Preprocessing and Prediction ===
+chat_history = []
+
 def clean_up_sentence(sentence):
     sentence_words = tokenizer.tokenize(sentence)
     return [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
@@ -63,13 +59,19 @@ def chatbot_response(msg):
     intents_list = predict_class(msg, model)
     return get_response(intents_list, intents)
 
-# === Flask App Setup ===
 app = Flask(__name__)
 CORS(app)
 
-@app.route("/", methods=["GET"])
-def health():
-    return jsonify({"Health": "✅ Server is running successfully"})
+@app.route("/", methods=["GET", "POST"])
+def index():
+    global chat_history
+    response = ""
+    if request.method == "POST":
+        user_message = request.form.get("message")
+        if user_message:
+            response = chatbot_response(user_message)
+            chat_history.append((user_message, response))
+    return render_template("index.html", response=response, chat_history=chat_history)
 
 @app.route("/query", methods=["GET"])
 def query_chatbot():
@@ -77,16 +79,38 @@ def query_chatbot():
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
     response = chatbot_response(user_message)
+    chat_history.append((user_message, response))
     return jsonify({"top": {"res": response}})
 
-# === Main Entry Point ===
+@app.route("/save_chat", methods=["GET"])
+def save_chat():
+    from fpdf import FPDF
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Chat Transcript", ln=True, align='C')
+    pdf.ln(10)
+
+    for user_msg, bot_msg in chat_history:
+        pdf.multi_cell(0, 10, f"You: {user_msg}")
+        pdf.multi_cell(0, 10, f"Bot: {bot_msg}")
+        pdf.ln(5)
+
+    os.makedirs("downloads", exist_ok=True)
+    filepath = os.path.join("downloads", "chat_history.pdf")
+    pdf.output(filepath)
+    return jsonify({"status": "saved", "path": filepath})
+
+@app.route("/reset_chat", methods=["POST"])
+def reset_chat():
+    global chat_history
+    chat_history = []
+    return jsonify({"status": "reset"})
+
 if __name__ == "__main__":
     port = 5000
-    public_url = ngrok.connect(port)  # Start ngrok tunnel
+    public_url = ngrok.connect(port)
     print(f" * ngrok tunnel available at: {public_url.public_url}")
-
-    # Automatically open browser to chatbot endpoint
-    webbrowser.open(str(public_url) + "/query?message=hello")
-
-    # Start the Flask app
+    webbrowser.open(str(public_url.public_url))
     app.run(port=port)
