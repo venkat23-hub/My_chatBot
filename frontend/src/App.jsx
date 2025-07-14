@@ -17,7 +17,9 @@ function App() {
 
     try {
       const encodedMessage = encodeURIComponent(userInput);
-      const res = await axios.get(`https://customised-chatbot.onrender.com/query/${encodedMessage}`);
+      const res = await axios.get(
+        `https://210010fb523d.ngrok-free.app/query?message=${encodedMessage}`
+      );
 
       const botMessage = { type: "bot", text: res.data.top.res };
       setChatLog((prev) => [...prev, botMessage]);
@@ -25,7 +27,10 @@ function App() {
       console.error(error);
       setChatLog((prev) => [
         ...prev,
-        { type: "bot", text: "⚠️ Something went wrong connecting to the bot." },
+        {
+          type: "bot",
+          text: "⚠️ Something went wrong connecting to the bot.",
+        },
       ]);
     }
 
@@ -35,11 +40,18 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-xl">
-        <h1 className="text-2xl font-bold mb-4 text-center">Customised ChatBot</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          Customised ChatBot
+        </h1>
 
         <div className="bg-gray-50 p-4 rounded h-64 overflow-y-auto border mb-4">
           {chatLog.map((msg, index) => (
-            <p key={index} className={`mb-2 ${msg.type === "bot" ? "text-blue-600" : "text-green-700"}`}>
+            <p
+              key={index}
+              className={`mb-2 ${
+                msg.type === "bot" ? "text-blue-600" : "text-green-700"
+              }`}
+            >
               <strong>{msg.type === "bot" ? "Bot" : "You"}:</strong> {msg.text}
             </p>
           ))}
