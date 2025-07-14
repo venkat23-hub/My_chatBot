@@ -10,16 +10,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
 
-# === Ensure NLTK Resources Are Available ===
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
+# === Point to Local NLTK Data Folder ===
+nltk.data.path.append('./nltk_data')
 
 # === NLP Tools ===
 lemmatizer = WordNetLemmatizer()
@@ -50,7 +42,7 @@ def bow(sentence, words):
 
 def predict_class(sentence, model):
     p = bow(sentence, words)
-    res = model.predict(np.array([p]))[0]
+    res = model.predict(np.array([p]), verbose=0)[0]
     ERROR_THRESHOLD = 0.25
     results = [[i, r] for i, r in enumerate(res) if r > ERROR_THRESHOLD]
     results.sort(key=lambda x: x[1], reverse=True)
@@ -85,6 +77,6 @@ def query_chatbot():
     response = chatbot_response(user_message)
     return jsonify({"top": {"res": response}})
 
-# === Main Entry Point (Local) ===
+# === Main Entry Point (for local and Render) ===
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
