@@ -6,11 +6,13 @@ import pickle
 import random
 import json
 import os
+import webbrowser
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
+from pyngrok import ngrok  # ✅ pyngrok handles tunneling
 
-# === Point to Local NLTK Data Folder ===
+# === Optional: Set path to local NLTK data ===
 nltk.data.path.append('./nltk_data')
 
 # === NLP Tools ===
@@ -77,6 +79,14 @@ def query_chatbot():
     response = chatbot_response(user_message)
     return jsonify({"top": {"res": response}})
 
-# === Main Entry Point (for local and Render) ===
+# === Main Entry Point ===
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    port = 5000
+    public_url = ngrok.connect(port)  # Start ngrok tunnel
+    print(f" * ngrok tunnel available at: {public_url.public_url}")
+
+    # Automatically open browser to chatbot endpoint
+    webbrowser.open(str(public_url) + "/query?message=hello")
+
+    # Start the Flask app
+    app.run(port=port)
