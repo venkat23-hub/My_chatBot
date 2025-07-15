@@ -37,7 +37,7 @@ def bow(sentence, words):
             if w == s:
                 bag[i] = 1
     return np.array(bag)
-
+# Predict the class of the sentence
 def predict_class(sentence, model):
     p = bow(sentence, words)
     res = model.predict(np.array([p]), verbose=0)[0]

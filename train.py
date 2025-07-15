@@ -10,7 +10,7 @@ from keras.optimizers import SGD
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TreebankWordTokenizer
 
-# Initialize
+# Initialize lemmatizer and tokenizer
 lemmatizer = WordNetLemmatizer()
 tokenizer = TreebankWordTokenizer()
 

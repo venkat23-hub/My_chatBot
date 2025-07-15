@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom ChatBot</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="chat-container">
@@ -30,17 +32,26 @@
 
     <script>
         async function saveChat() {
-            const res = await fetch("/save_chat");
-            const data = await res.json();
-            alert("✅ Chat saved to " + data.path);
+            const chatBox = document.getElementById('chat-box');
+            const messages = chatBox.innerText.trim();
+
+            if (!messages) {
+                alert("⚠️ No chat to save!");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Split long text to fit the page width
+            const lines = doc.splitTextToSize(messages, 180); // 180 for page width
+            doc.text(lines, 10, 10);
+            doc.save('chat_history.pdf');
         }
 
-        async function resetChat() {
-            const res = await fetch("/reset_chat", { method: 'POST' });
-            const data = await res.json();
-            if (data.status === "reset") {
-                location.reload();
-            }
+        function resetChat() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = ''; // Clear the chat messages
         }
     </script>
 </body>

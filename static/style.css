@@ -27,8 +27,28 @@ body {
     margin-bottom: 20px;
 }
 
-.user-msg { color: green; }
-.bot-msg { color: blue; }
+/* Scrollbar styling */
+.chat-box::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 5px;
+}
+
+/* Chat message spacing */
+.chat-box p {
+    margin: 5px 0;
+}
+
+.user-msg {
+    color: green;
+}
+
+.bot-msg {
+    color: blue;
+}
 
 .chat-form {
     display: flex;
